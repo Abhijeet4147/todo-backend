@@ -14,40 +14,15 @@ pipeline {
 
                 steps {
                     script {
-                        dir('server') {
-                            echo 'Building backend Image'
-                            def backendImage = "${DOCKER_USERNAME}/backend:${BUILD_NUMBER}"
-                            sh "docker build -t ${backendImage} ."
+                        echo 'Building backend Image'
+                        def backendImage = "${DOCKER_USERNAME}/backend:${BUILD_NUMBER}"
+                        sh "docker build -t ${backendImage} ."
 
-                            echo 'Pushing to DockerHub'
-                            withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'USERNAME',passwordVariable:'PASSWORD')]) {
-                                sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
-                                sh "docker push ${backendImage}"
-                            }
-                            echo 'Backend image pushed successfully.'
-                        }
-                    }
-                }
-
-        }
-        stage('build frontend image'){
-
-                steps {
-                    script {
-                        dir('client') {
-                            echo 'Building frontend Image'
-                            echo "--- DEBUGGING FILE STRUCTURE ---"
-                            sh "ls -la" 
-                            echo "--- END DEBUG ---"                            
-                            def frontendImage = "${DOCKER_USERNAME}/frontend:${BUILD_NUMBER}"
-                            sh "docker build -t ${frontendImage} ."
-
-                            echo 'Pushing to DockerHub'
-                            withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'USERNAME',passwordVariable:'PASSWORD')]) {
-                                sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
-                                sh "docker push ${frontendImage}"
-                            }
-                            echo 'frontend image pushed successfully.'
+                        echo 'Pushing to DockerHub'
+                        withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'USERNAME',passwordVariable:'PASSWORD')]) {
+                            sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
+                            sh "docker push ${backendImage}"
+                        echo 'Backend image pushed successfully.'
                         }
                     }
                 }
@@ -72,11 +47,6 @@ pipeline {
                             k8s/charts/backend/deployment.yaml
                             """
 
-                            //THIS UPDATE FRONTEND DEPLOYMENT
-                            sh """
-                            sed -i 's|image: .*/frontend:.*|image: ${DOCKER_USERNAME}/frontend:${BUILD_NUMBER}|g' \
-                            k8s/charts/frontend/deployment.yaml
-                            """
 
                             echo 'Committiog changes to manifest repo.'
                             sh 'git add .'
